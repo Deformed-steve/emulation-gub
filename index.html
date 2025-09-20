@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>RetroPlay Emulator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <img src="assets/logo.png" alt="Logo" class="logo">
+    <h1>RetroPlay</h1>
+  </header>
+
+  <main>
+    <div id="upload-box">
+      <label for="romUpload" class="upload-label">Upload ROM</label>
+      <input type="file" id="romUpload" accept=".nes,.gba,.gb,.zip,.smc,.sfc,.n64,.nds">
+      <p id="gameInfo">No game loaded.</p>
+    </div>
+
+    <canvas id="emulatorCanvas"></canvas>
+  </main>
+
+  <footer>
+    <p>RetroPlay Emulator • Powered by Emulator.js</p>
+  </footer>
+
+  <script src="emulator.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
