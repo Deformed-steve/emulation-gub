@@ -1,49 +1,66 @@
-const romUpload = document.getElementById('romUpload');
-const gameInfo = document.getElementById('gameInfo');
+const romUpload = document.getElementById("romUpload");
+const gameInfo = document.getElementById("gameInfo");
+const emulatorFrame = document.getElementById("emulatorFrame");
 
-romUpload.addEventListener('change', async (event) => {
+const coreMap = {
+  "nes": "nes",
+  "gba": "gba",
+  "gb": "gb",
+  "gbc": "gb",
+  "sfc": "snes",
+  "smc": "snes",
+  "n64": "n64",
+  "nds": "nds",
+  "zip": "gba" // fallback for zipped ROMs
+};
+
+romUpload.addEventListener("change", async (event) => {
   const file = event.target.files[0];
   if (!file) return;
 
-  // Detect game name/year
-  const fileName = file.name.replace(/\.[^/.]+$/, ""); 
+  // Detect extension -> core
+  const ext = file.name.split(".").pop().toLowerCase();
+  const core = coreMap[ext] || "gba";
+
+  // Detect name/year
+  const fileName = file.name.replace(/\.[^/.]+$/, "");
   let year = "";
   const match = fileName.match(/\b(19|20)\d{2}\b/);
   if (match) year = ` (${match[0]})`;
 
-  gameInfo.textContent = `Loaded: ${fileName}${year}`;
+  gameInfo.textContent = `Loaded: ${fileName}${year} [${core.toUpperCase()}]`;
 
-  const arrayBuffer = await file.arrayBuffer();
+  // Create local blob URL
+  const blobUrl = URL.createObjectURL(file);
 
-  // Save game to IndexedDB
-  localStorage.setItem("lastGameName", fileName);
-  localStorage.setItem("lastGameROM", JSON.stringify(Array.from(new Uint8Array(arrayBuffer))));
+  // Save to localStorage
+  localStorage.setItem("lastGame", JSON.stringify({
+    name: fileName,
+    core: core,
+    url: blobUrl
+  }));
 
-  runGame(new Uint8Array(arrayBuffer));
+  loadGame(blobUrl, core, fileName);
 });
 
-// Restore last session
+// Restore session
 window.addEventListener("load", () => {
-  const lastROM = localStorage.getItem("lastGameROM");
-  if (lastROM) {
-    const fileName = localStorage.getItem("lastGameName");
-    gameInfo.textContent = `Restored: ${fileName}`;
-    runGame(new Uint8Array(JSON.parse(lastROM)));
+  const lastGame = JSON.parse(localStorage.getItem("lastGame") || "null");
+  if (lastGame) {
+    gameInfo.textContent = `Restored: ${lastGame.name} [${lastGame.core.toUpperCase()}]`;
+    loadGame(lastGame.url, lastGame.core, lastGame.name);
   }
 });
 
-// Boot emulator.js
-function runGame(romData) {
-  const canvas = document.getElementById("emulatorCanvas");
-  EJS_player = "#emulatorCanvas";
-  EJS_gameName = "Uploaded Game";
-  EJS_gameData = romData;
-  EJS_biosUrl = "";
-  EJS_core = "gba"; // auto set based on extension (todo)
-  EJS_fullscreenOnLoaded = false;
+// Load into emulator iframe
+function loadGame(url, core, name) {
+  const params = new URLSearchParams({
+    EJS_core: core,
+    EJS_gameUrl: url,
+    EJS_gameName: name,
+    EJS_biosUrl: "",
+    EJS_fullscreenOnLoaded: "false"
+  });
 
-  // Call emulator.js boot
-  if (typeof window.EJS_emulatorReady === "function") {
-    window.EJS_emulatorReady();
-  }
+  emulatorFrame.src = `https://cdn.emulatorjs.org/latest/loader.html?${params.toString()}`;
 }
