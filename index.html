@@ -13,17 +13,16 @@
   <main>
     <div id="upload-box">
       <label for="romUpload" class="upload-label">Upload ROM</label>
-      <input type="file" id="romUpload" accept=".nes,.gba,.gb,.zip,.smc,.sfc,.n64,.nds">
+      <input type="file" id="romUpload" accept=".nes,.gba,.gb,.gbc,.zip,.smc,.sfc,.n64,.nds">
       <p id="gameInfo">No game loaded.</p>
     </div>
 
-    <div id="emulator-wrapper">
-      <iframe id="emulatorFrame" frameborder="0" allowfullscreen></iframe>
-    </div>
+    <!-- Emulator target -->
+    <div id="gameContainer"></div>
   </main>
 
   <footer>
-    <p>RetroPlay Emulator • Powered by Emulator.js</p>
+    <p>RetroPlay Emulator • Powered by EmulatorJS</p>
   </footer>
 
   <script src="script.js"></script>
