@@ -7,8 +7,7 @@
 </head>
 <body>
   <header>
-    <img src="assets/logo.png" alt="Logo" class="logo">
-    <h1>RetroPlay</h1>
+    <h1>🎮 RetroPlay</h1>
   </header>
 
   <main>
@@ -18,14 +17,15 @@
       <p id="gameInfo">No game loaded.</p>
     </div>
 
-    <canvas id="emulatorCanvas"></canvas>
+    <div id="emulator-wrapper">
+      <iframe id="emulatorFrame" frameborder="0" allowfullscreen></iframe>
+    </div>
   </main>
 
   <footer>
     <p>RetroPlay Emulator • Powered by Emulator.js</p>
   </footer>
 
-  <script src="emulator.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
