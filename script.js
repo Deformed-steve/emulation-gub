@@ -1,6 +1,6 @@
 const romUpload = document.getElementById("romUpload");
 const gameInfo = document.getElementById("gameInfo");
-const emulatorFrame = document.getElementById("emulatorFrame");
+const gameContainer = document.getElementById("gameContainer");
 
 const coreMap = {
   "nes": "nes",
@@ -14,15 +14,15 @@ const coreMap = {
   "zip": "gba" // fallback for zipped ROMs
 };
 
+// Handle ROM upload
 romUpload.addEventListener("change", async (event) => {
   const file = event.target.files[0];
   if (!file) return;
 
-  // Detect extension -> core
   const ext = file.name.split(".").pop().toLowerCase();
   const core = coreMap[ext] || "gba";
 
-  // Detect name/year
+  // Game name + year detection
   const fileName = file.name.replace(/\.[^/.]+$/, "");
   let year = "";
   const match = fileName.match(/\b(19|20)\d{2}\b/);
@@ -30,10 +30,10 @@ romUpload.addEventListener("change", async (event) => {
 
   gameInfo.textContent = `Loaded: ${fileName}${year} [${core.toUpperCase()}]`;
 
-  // Create local blob URL
+  // Blob URL for ROM
   const blobUrl = URL.createObjectURL(file);
 
-  // Save to localStorage
+  // Save session
   localStorage.setItem("lastGame", JSON.stringify({
     name: fileName,
     core: core,
@@ -43,7 +43,7 @@ romUpload.addEventListener("change", async (event) => {
   loadGame(blobUrl, core, fileName);
 });
 
-// Restore session
+// Restore last session
 window.addEventListener("load", () => {
   const lastGame = JSON.parse(localStorage.getItem("lastGame") || "null");
   if (lastGame) {
@@ -52,15 +52,24 @@ window.addEventListener("load", () => {
   }
 });
 
-// Load into emulator iframe
 function loadGame(url, core, name) {
-  const params = new URLSearchParams({
-    EJS_core: core,
-    EJS_gameUrl: url,
-    EJS_gameName: name,
-    EJS_biosUrl: "",
-    EJS_fullscreenOnLoaded: "false"
-  });
+  // Clear previous emulator
+  gameContainer.innerHTML = "";
 
-  emulatorFrame.src = `https://cdn.emulatorjs.org/latest/loader.html?${params.toString()}`;
+  // Set EmulatorJS globals
+  window.EJS_player = "#gameContainer";
+  window.EJS_core = core;
+  window.EJS_gameUrl = url;
+  window.EJS_gameName = name;
+  window.EJS_pathtodata = "https://cdn.emulatorjs.org/latest/data/";
+
+  // Remove existing loader if any
+  const existing = document.querySelector("script#emulatorjs-loader");
+  if (existing) existing.remove();
+
+  // Load EmulatorJS
+  const script = document.createElement("script");
+  script.id = "emulatorjs-loader";
+  script.src = window.EJS_pathtodata + "loader.js";
+  document.body.appendChild(script);
 }
