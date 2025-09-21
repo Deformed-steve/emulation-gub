@@ -2,36 +2,146 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>RetroPlay Emulator</title>
-  <link rel="stylesheet" href="style.css">
+  <title>RetroPlay Collections</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; background:#111; color:#eee; }
+    header, footer { background:#222; padding:10px; text-align:center; }
+    main { padding:20px; }
+    .collection { background:#1c1c1c; margin:10px 0; padding:10px; border-radius:8px; }
+    .game { display:inline-block; margin:10px; text-align:center; cursor:pointer; }
+    .game img { width:80px; height:80px; display:block; margin:0 auto 5px; border-radius:6px; object-fit:cover; }
+    #gameContainer { margin-top:20px; min-height:400px; background:#000; }
+    button, input[type=text] { margin:5px; padding:6px 10px; border-radius:4px; border:none; }
+  </style>
 </head>
 <body>
-  <header>
-    <h1>🎮 RetroPlay</h1>
-  </header>
+<header>
+  <h1>🎮 RetroPlay Collections</h1>
+</header>
 
-  <main>
-    <div id="upload-box">
-      <label for="romUpload" class="upload-label">Upload ROM</label>
-     <input type="file" 
-       id="romUpload" 
-       accept=".nes,.fds,.unf,.gba,.gb,.gbc,.sfc,.smc,.fig,.swc,
-               .n64,.z64,.v64,.nds,.dsi,.nds,.zip,.pce,.sgx,.cue,.iso,.bin,
-               .sms,.gg,.sg,.md,.gen,.smd,.32x,.col,.int,.ws,.wsc,.jag,.vec,.lynx,
-               .ngp,.ngc,.neo,.vb,.ws,.wsc,.chd,.rvz,.gcm,.wad,.dol,.elf,
-               .7z,.gz">
+<main>
+  <div>
+    <button onclick="newCollection()">➕ New Collection</button>
+    <button onclick="showCommunity()">🌐 Community Collections</button>
+  </div>
 
-      <p id="gameInfo">No game loaded.</p>
-    </div>
+  <div id="collections"></div>
 
-    <!-- Emulator target -->
-    <div id="gameContainer"></div>
-  </main>
+  <h3>Emulator</h3>
+  <div id="gameContainer"></div>
+</main>
 
-  <footer>
-    <p>RetroPlay Emulator • Powered by EmulatorJS</p>
-  </footer>
+<footer>
+  <p>RetroPlay Emulator • Powered by EmulatorJS</p>
+</footer>
 
-  <script src="script.js"></script>
+<script>
+const collectionsEl = document.getElementById("collections");
+const gameContainer = document.getElementById("gameContainer");
+
+function getCollections() {
+  return JSON.parse(localStorage.getItem("collections") || "{}");
+}
+function saveCollections(c) {
+  localStorage.setItem("collections", JSON.stringify(c));
+  renderCollections();
+}
+
+function newCollection() {
+  const name = prompt("Collection name?");
+  if (!name) return;
+  const c = getCollections();
+  if (c[name]) { alert("Already exists."); return; }
+  c[name] = { games: [] };
+  saveCollections(c);
+}
+
+function addGameToCollection(colName) {
+  const fileInput = document.createElement("input");
+  fileInput.type = "file";
+  fileInput.accept = ".nes,.gba,.smc,.sfc,.n64,.zip,.iso,.bin,.chd"; // extend
+  fileInput.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const core = prompt("Enter emulator core (e.g. nes, gba, snes, n64, psx):");
+    if (!core) return;
+
+    const iconInput = document.createElement("input");
+    iconInput.type = "file";
+    iconInput.accept = "image/*";
+    iconInput.onchange = imgE => {
+      const imgFile = imgE.target.files[0];
+      if (!imgFile) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const c = getCollections();
+        c[colName].games.push({
+          name: file.name.replace(/\.[^/.]+$/, ""),
+          url: URL.createObjectURL(file),
+          core: core,
+          icon: reader.result
+        });
+        saveCollections(c);
+      };
+      reader.readAsDataURL(imgFile);
+    };
+    iconInput.click();
+  };
+  fileInput.click();
+}
+
+function renderCollections() {
+  const c = getCollections();
+  collectionsEl.innerHTML = "";
+  for (let name in c) {
+    const colDiv = document.createElement("div");
+    colDiv.className = "collection";
+    colDiv.innerHTML = `<h2>${name}</h2>
+      <button onclick="addGameToCollection('${name}')">Add Game</button>
+      <button onclick="shareCollection('${name}')">Share</button>`;
+    c[name].games.forEach((g,i) => {
+      const gameDiv = document.createElement("div");
+      gameDiv.className = "game";
+      gameDiv.innerHTML = `<img src="${g.icon}" alt=""><span>${g.name}</span>`;
+      gameDiv.onclick = () => loadGame(g.url, g.core, g.name);
+      colDiv.appendChild(gameDiv);
+    });
+    collectionsEl.appendChild(colDiv);
+  }
+}
+
+function shareCollection(name) {
+  const c = getCollections();
+  const code = btoa(JSON.stringify(c[name]));
+  prompt("Share this code:", code);
+}
+
+function showCommunity() {
+  const code = prompt("Paste collection code:");
+  if (!code) return;
+  try {
+    const obj = JSON.parse(atob(code));
+    const name = prompt("Name this imported collection:");
+    if (!name) return;
+    const c = getCollections();
+    c[name] = obj;
+    saveCollections(c);
+  } catch(e) { alert("Invalid code."); }
+}
+
+function loadGame(url, core, name) {
+  gameContainer.innerHTML = "";
+  window.EJS_player = "#gameContainer";
+  window.EJS_core = core;
+  window.EJS_gameUrl = url;
+  window.EJS_gameName = name;
+  window.EJS_pathtodata = "https://cdn.emulatorjs.org/latest/data/";
+  const script = document.createElement("script");
+  script.src = window.EJS_pathtodata + "loader.js";
+  document.body.appendChild(script);
+}
+
+renderCollections();
+</script>
 </body>
 </html>
